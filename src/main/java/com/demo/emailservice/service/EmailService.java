@@ -4,8 +4,8 @@ import com.demo.emailservice.model.User;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -14,7 +14,8 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.io.UnsupportedEncodingException;
-import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class EmailService {
@@ -24,46 +25,56 @@ public class EmailService {
     private static final String PNG_MIME = "image/png";
     private static final String MAIL_SUBJECT = "Seja bem vindo(a):";
 
-    private final Environment environment;
+    @Value("${spring.mail.properties.mail.smtp.from}")
+    private String mailFrom;
+
+    @Value("${mail.from.name:Identity}")
+    private String mailFromName;
+
+    @Value("${spring.mail.default-encoding:UTF-8}")
+    private String emailEncoding;
 
     private final JavaMailSender mailSender;
-
     private final TemplateEngine htmlTemplateEngine;
 
-    public EmailService(Environment environment, JavaMailSender mailSender, TemplateEngine htmlTemplateEngine) {
-        this.environment = environment;
+    public EmailService(JavaMailSender mailSender, TemplateEngine htmlTemplateEngine) {
         this.mailSender = mailSender;
         this.htmlTemplateEngine = htmlTemplateEngine;
     }
 
-    public void sendMailWithInline(User user) throws MessagingException, UnsupportedEncodingException {
+    public void sendMailWithInline(User user) {
+        try {
+            String confirmationUrl = "generated_confirmation_url";
+            String logoPath = "templates/images/spring.png";
 
-        String confirmationUrl = "generated_confirmation_url";
-        String mailFrom = environment.getProperty("spring.mail.properties.mail.smtp.from");
-        String mailFromName = environment.getProperty("mail.from.name", "Identity");
+            final MimeMessage mimeMessage = this.mailSender.createMimeMessage();
+            final MimeMessageHelper email;
+            email = new MimeMessageHelper(mimeMessage, true, emailEncoding);
 
-        final MimeMessage mimeMessage = this.mailSender.createMimeMessage();
-        final MimeMessageHelper email;
-        email = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            email.setTo(user.getEmail());
+            email.setSubject(MAIL_SUBJECT);
+            email.setFrom(new InternetAddress(mailFrom, mailFromName));
 
-        email.setTo(user.getEmail());
-        email.setSubject(MAIL_SUBJECT);
-        email.setFrom(new InternetAddress(mailFrom, mailFromName));
 
-        final Context ctx = new Context(LocaleContextHolder.getLocale());
-        ctx.setVariable("email", user.getEmail());
-        ctx.setVariable("name", user.getName());
-        ctx.setVariable("springLogo", SPRING_LOGO_IMAGE);
-        ctx.setVariable("url", confirmationUrl);
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("email", user.getEmail());
+            variables.put("name", user.getName());
+            variables.put("springLogo", logoPath);
+            variables.put("url", confirmationUrl);
 
-        final String htmlContent = this.htmlTemplateEngine.process(TEMPLATE_NAME, ctx);
+            final Context ctx = new Context(LocaleContextHolder.getLocale());
+            ctx.setVariables(variables);
 
-        email.setText(htmlContent, true);
+            final String htmlContent = this.htmlTemplateEngine.process(TEMPLATE_NAME, ctx);
+            email.setText(htmlContent, true);
 
-        ClassPathResource clr = new ClassPathResource(SPRING_LOGO_IMAGE);
+            ClassPathResource clr = new ClassPathResource(logoPath);
+            email.addInline("springLogo", clr, PNG_MIME);
 
-        email.addInline("springLogo", clr, PNG_MIME);
+            mailSender.send(mimeMessage);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            System.err.println("Erro ao enviar e-mail: " + e.getMessage());
 
-        mailSender.send(mimeMessage);
+        }
     }
 }

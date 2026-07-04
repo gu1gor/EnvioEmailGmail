@@ -277,4 +277,3 @@ curl -X POST http://localhost:8080/register \
 Desenvolvido por **Gustavo Igor**
 
 [![GitHub](https://img.shields.io/badge/GitHub-gu1gor-181717?style=flat&logo=github)](https://github.com/gu1gor)
-[![GitHub](https://img.shields.io/badge/GitHub-gu1gor-181717?style=flat&logo=github)](https://github.com/gu1gor)

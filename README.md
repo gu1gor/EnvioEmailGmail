@@ -130,16 +130,3 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 Desenvolvido por **Gustavo Igor**
 
 [![GitHub](https://img.shields.io/badge/GitHub-gu1gor-181717?style=flat&logo=github)](https://github.com/gu1gor)
-Só falta eu confirmar os campos exatos da classe User pra deixar o exemplo de JSON 100% certo — se quiser colar o conteúdo dela aqui, eu ajusto o exemplo de requisição.package com.demo.emailservice.model;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-@Data
-@AllArgsConstructor
-public class User {
-    private String name;
-    private String email;
-    @Override
-    public String toString() {
-        return "User{name='" + name + "', email='" + email + "'}";
-    }
-}
